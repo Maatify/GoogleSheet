@@ -11,21 +11,28 @@ class SheetHandler
 {
     //https://www.nidup.io/blog/manipulate-google-sheets-in-php-with-api
     //https://www.srijan.net/resources/blog/integrating-google-sheets-with-php-is-this-easy-know-how
+    protected string $credentials_file, $spread_sheet_Id, $spread_sheet_range;
+    private Google_Service_Sheets $service;
 
-    public function ReadAll($credentials_location, $spread_sheet_Id, $spread_sheet_range): array
+    public function __construct()
     {
         $client = new Google_Client();
         $client->setApplicationName('Google Sheets API PHP Quickstart');
         $client->setScopes(Google_Service_Sheets::SPREADSHEETS_READONLY);
         try {
-            $client->setAuthConfig($credentials_location);
+            $client->setAuthConfig($this->credentials_file);
             $client->setAccessType('offline');
-
-            $service = new Google_Service_Sheets($client);
-
-            return ($service->spreadsheets_values->get($spread_sheet_Id, $spread_sheet_range))->getValues();
+            $this->service = new Google_Service_Sheets($client);
         } catch (\Google\Exception $e) {
             Logger::RecordLog($e, 'google_sheet_err');
+        }
+    }
+
+    public function ReadAll(): array
+    {
+        try {
+            return ($this->service->spreadsheets_values->get($this->spread_sheet_Id, $this->spread_sheet_range))->getValues();
+        }catch (Exception $e){
             return [];
         }
     }
@@ -33,8 +40,7 @@ class SheetHandler
     //1F79RIlr0Sz1hky0-Gt-OA2f79hAqid-YHpLxLr1QBI0
     //Project ID: test-sheets-366510.
 
-    public function WriteRow($credentials_location,
-        string $spread_sheet_Id,
+    public function WriteRow(
         array $newRow): void
     {
         $rows = [$newRow]; // you can append several rows at once
@@ -42,16 +48,8 @@ class SheetHandler
         $valueRange->setValues($rows);
         $range = 'Sheet1'; // the service will detect the last row of this sheet
         $options = ['valueInputOption' => 'USER_ENTERED'];
-
-
-        $client = new Google_Client();
-        $client->setApplicationName('Google Sheets API PHP Quickstart');
-        $client->setScopes(Google_Service_Sheets::SPREADSHEETS);
         try {
-            $client->setAuthConfig($credentials_location);
-            $client->setAccessType('offline');
-            $service = new Google_Service_Sheets($client);
-            $service->spreadsheets_values->append($spread_sheet_Id, $range, $valueRange, $options);
+            $this->service->spreadsheets_values->append($this->spread_sheet_Id, $range, $valueRange, $options);
         } catch (Exception $exception) {
             echo $exception;
         }
