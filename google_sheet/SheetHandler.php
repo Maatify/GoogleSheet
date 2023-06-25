@@ -1,5 +1,22 @@
 <?php
-
+/**
+ * @copyright   ©2023 Maatify.dev
+ * @Liberary    GoogleSheet
+ * @Project     GoogleSheet
+ * @author      Mohamed Abdulalim (megyptm) <mohamed@maatify.dev>
+ * @since       2023-06-25 12:00 PM
+ * @see         https://www.maatify.dev Maatify.com
+ * @link        https://github.com/Maatify/GoogleSheet  view project on GitHub
+ * @link        https://github.com/Maatify/Logger (maatify/logger)
+ * @link        https://github.com/google/apiclient (google/apiclient)
+ * @copyright   ©2023 Maatify.dev
+ * @note        This Project extends other libraries maatify/logger, google/apiclient.
+ *
+ * @note        This program is distributed in the hope that it will be useful - WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ */
 namespace Maatify\GoogleSheet;
 
 use Exception;
