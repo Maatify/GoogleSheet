@@ -11,18 +11,23 @@ class SheetHandler
 {
     //https://www.nidup.io/blog/manipulate-google-sheets-in-php-with-api
     //https://www.srijan.net/resources/blog/integrating-google-sheets-with-php-is-this-easy-know-how
-    protected string $credentials_file, $spread_sheet_Id, $spread_sheet_range;
+    protected string $credentials_file;
+    protected string $spread_sheet_Id;
+    protected string $spread_sheet_range;
     private Google_Service_Sheets $service;
+    private Google_Client $client;
 
     public function __construct()
     {
-        $client = new Google_Client();
-        $client->setApplicationName('Google Sheets API PHP Quickstart');
-        $client->setScopes(Google_Service_Sheets::SPREADSHEETS_READONLY);
+        $this->client = new Google_Client();
+        $this->client->setApplicationName('Google Sheets API PHP Quickstart');
+        //        $this->client->setScopes(Google_Service_Sheets::SPREADSHEETS_READONLY);
+        $this->client->setScopes(Google_Service_Sheets::SPREADSHEETS);
+
         try {
-            $client->setAuthConfig($this->credentials_file);
-            $client->setAccessType('offline');
-            $this->service = new Google_Service_Sheets($client);
+            $this->client->setAuthConfig($this->credentials_file);
+            $this->client->setAccessType('offline');
+            $this->service = new Google_Service_Sheets($this->client);
         } catch (\Google\Exception $e) {
             Logger::RecordLog($e, 'google_sheet_err');
         }
@@ -32,7 +37,7 @@ class SheetHandler
     {
         try {
             return ($this->service->spreadsheets_values->get($this->spread_sheet_Id, $this->spread_sheet_range))->getValues();
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return [];
         }
     }

@@ -2,14 +2,15 @@
 
 maatify.dev MySql Database Google Sheet handler, known by our team
 
-## Installation
+# Installation
 
-    composer require maatify/google-sheet
-
+```shell
+composer require maatify/google-sheet
+```
 
 Usage 
 1- Create Class 
-
+```PHP
     <?php
 
     namespace GoogleSheet;
@@ -33,12 +34,13 @@ Usage
             return self::$instance;
         }
     }
-
+```
 
 * to read sheet as array
-
+```PHP
     GoogleSheet\GSheet::obj()->ReadAll();
-
+```
 * to insert array to row 
-
+```PHP
     GoogleSheet\GSheet::obj()->WriteRow();
+```
