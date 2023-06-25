@@ -7,7 +7,7 @@ use Google_Client;
 use Google_Service_Sheets;
 use Maatify\Logger\Logger;
 
-class SheetHandler
+abstract class SheetHandler
 {
     //https://www.nidup.io/blog/manipulate-google-sheets-in-php-with-api
     //https://www.srijan.net/resources/blog/integrating-google-sheets-with-php-is-this-easy-know-how
