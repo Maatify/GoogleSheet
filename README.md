@@ -7,11 +7,12 @@ maatify.dev MySql Database Google Sheet handler, known by our team
     composer require maatify/google-sheet
 
 
-Usage Create Class 
+Usage 
+1- Create Class 
 
     <?php
 
-    namespace App\Assist\GoogleSheet;
+    namespace GoogleSheet;
 
     use Maatify\GoogleSheet\SheetHandler;
 
@@ -34,10 +35,10 @@ Usage Create Class
     }
 
 
-to read sheet as array
+* to read sheet as array
 
-    GSheet::obj()->ReadAll();
+    GoogleSheet\GSheet::obj()->ReadAll();
 
-to insert array to row 
+* to insert array to row 
 
-    GSheet::obj()->WriteRow();
+    GoogleSheet\GSheet::obj()->WriteRow();
