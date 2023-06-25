@@ -1,6 +1,6 @@
 # GoogleSheet
 
-maatify.dev MySql Database Google Sheet handler, known by our team
+maatify.dev Google Sheet handler, read and write to google sheet, known by our team
 
 # Installation
 
