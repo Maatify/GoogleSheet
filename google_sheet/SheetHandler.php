@@ -22,6 +22,7 @@ namespace Maatify\GoogleSheet;
 use Exception;
 use Google_Client;
 use Google_Service_Sheets;
+use Google_Service_Sheets_ValueRange;
 use Maatify\Logger\Logger;
 
 abstract class SheetHandler
@@ -63,17 +64,19 @@ abstract class SheetHandler
     //Project ID: test-sheets-366510.
 
     public function WriteRow(
-        array $newRow): void
+        array $newRow): bool
     {
         $rows = [$newRow]; // you can append several rows at once
-        $valueRange = new \Google_Service_Sheets_ValueRange();
+        $valueRange = new Google_Service_Sheets_ValueRange();
         $valueRange->setValues($rows);
         $range = 'Sheet1'; // the service will detect the last row of this sheet
         $options = ['valueInputOption' => 'USER_ENTERED'];
         try {
             $this->service->spreadsheets_values->append($this->spread_sheet_Id, $range, $valueRange, $options);
+            return true;
         } catch (Exception $exception) {
-            echo $exception;
+            Logger::RecordLog($exception, 'g_sheet');
+            return false;
         }
         /*
         $newRow = [
