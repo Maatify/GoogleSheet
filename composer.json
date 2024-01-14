@@ -1,7 +1,7 @@
 {
   "name": "maatify/google-sheet",
   "description": "Official PHP library for maatify.dev Google Sheet handler, known by our team",
-  "version": "1.1.4",
+  "version": "5.0.1",
   "type": "library",
   "keywords": [
     "PHP",
@@ -37,15 +37,9 @@
       "role": "IOS Developer"
     }
   ],
-  "config": {
-    "platform": {
-      "php": "8.0.0"
-    }
-  },
   "require": {
-    "php": ">=8.0",
     "google/apiclient": "^2.15",
-    "maatify/logger": "^1.0"
+    "maatify/logger": "^5"
   },
   "autoload": {
     "psr-4": {
