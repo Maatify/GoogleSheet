@@ -1,3 +1,12 @@
+[![Current version](https://img.shields.io/packagist/v/maatify/google-sheet)][pkg]
+[![Packagist PHP Version Support](https://img.shields.io/packagist/php-v/maatify/google-sheet)][pkg]
+[![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/google-sheet)][pkg-stats]
+[![Total Downloads](https://img.shields.io/packagist/dt/maatify/google-sheet)][pkg-stats]
+[![Stars](https://img.shields.io/packagist/stars/maatify/google-sheet)](https://github.com/maatify/google-sheet/stargazers)
+
+[pkg]: <https://packagist.org/packages/maatify/google-sheet>
+[pkg-stats]: <https://packagist.org/packages/maatify/google-sheet/stats>
+
 # GoogleSheet
 
 maatify.dev Google Sheet handler, read and write to google sheet, known by our team
