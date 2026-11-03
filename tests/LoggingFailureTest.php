@@ -2,92 +2,51 @@
 
 namespace Maatify\GoogleSheet\Tests;
 
-use Google_Client;
-use Google_Service_Sheets;
-use Maatify\GoogleSheet\Tests\Support\FailingValues;
-use Maatify\GoogleSheet\Tests\Support\TestSheetHandler;
+use FilesystemIterator;
 use Maatify\Logger\Logger;
 use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
-use Throwable;
 
 /**
  * A failure of the logger itself must not replace the outcome of the operation that failed: when
  * the real maatify/logger cannot write (its log directory is read-only), WriteRow() still returns
  * false instead of throwing out of its catch block.
  *
- * The logger is the real one, not a mock. Where a logger release does not throw on an unwritable
- * directory there is nothing to verify and the test is skipped; the constructor's catch block
- * (a \Google\Exception that the pinned Google client never throws on this path) is covered by the
+ * The logger is the real one, not a mock, and the scenario runs in a child process against a private
+ * copy of the installed logger package inside a temporary project root, so the repository's own files and
+ * permissions are never touched. Where a logger release does not throw on an unwritable directory
+ * there is nothing to verify and the test is skipped. The constructor's catch block (a
+ * \Google\Exception that the pinned Google client never throws on this path) is covered by the
  * static check that both catch blocks go through the failure-safe helper.
  */
 final class LoggingFailureTest extends TestCase
 {
-    private string $hourDir = '';
-    private string $credentialsDir = '';
-
-    protected function setUp(): void
-    {
-        $loggerFile = (string)(new ReflectionClass(Logger::class))->getFileName();
-        $this->hourDir = sprintf('%s/logs/%s/%s/%s/%s', dirname($loggerFile, 5), date('Y'), date('m'), date('d'), date('H'));
-        if (!is_dir($this->hourDir)) {
-            mkdir($this->hourDir, 0775, true);
-        }
-        // Files already written this hour are made read-only too, so appending to them fails as well.
-        foreach (glob($this->hourDir . '/*') ?: [] as $file) {
-            if (is_file($file)) {
-                chmod($file, 0444);
-            }
-        }
-        chmod($this->hourDir, 0555);
-        clearstatcache();
-        if (is_writable($this->hourDir)) {
-            $this->restore();
-            $this->markTestSkipped('The log directory cannot be made read-only here (running as root?).');
-        }
-        $this->credentialsDir = sys_get_temp_dir() . '/gs-logging-failure-' . bin2hex(random_bytes(4));
-        mkdir($this->credentialsDir);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->restore();
-        array_map('unlink', glob($this->credentialsDir . '/*') ?: []);
-        if ($this->credentialsDir !== '') {
-            @rmdir($this->credentialsDir);
-        }
-    }
-
-    private function restore(): void
-    {
-        if ($this->hourDir !== '' && is_dir($this->hourDir)) {
-            chmod($this->hourDir, 0775);
-            foreach (glob($this->hourDir . '/*') ?: [] as $file) {
-                if (is_file($file)) {
-                    chmod($file, 0664);
-                }
-            }
-        }
-    }
-
     public function testAFailedWriteIsStillReportedAsFalseWhenTheLoggerCannotWrite(): void
     {
-        $loggerThrows = false;
+        $root = sys_get_temp_dir() . '/gs-logging-failure-' . bin2hex(random_bytes(4));
+        $hourDir = sprintf('%s/logs/%s/%s/%s/%s', $root, date('Y'), date('m'), date('d'), date('H'));
         try {
-            Logger::RecordLog(message: 'probe', logFile: 'probe');
-        } catch (Throwable) {
-            $loggerThrows = true; // the real logger throws here: the situation under test
+            $loggerFile = (string)(new ReflectionClass(Logger::class))->getFileName();
+            $installed = dirname($loggerFile, 2);
+            $this->copyDirectory($installed, $root . '/vendor/maatify/logger');
+            mkdir($hourDir, 0775, true);
+            chmod($hourDir, 0555);
+            clearstatcache();
+            if (is_writable($hourDir)) {
+                $this->markTestSkipped('The temporary log directory cannot be made read-only here (running as root?).');
+            }
+
+            $result = $this->runScenario($root, substr($loggerFile, strlen($installed) + 1));
+        } finally {
+            $this->removeTree($root);
         }
-        if (!$loggerThrows) {
+
+        if (($result['loggerThrows'] ?? null) === false) {
             $this->markTestSkipped('This maatify/logger release does not throw on an unwritable log directory.');
         }
-
-        $handler = new TestSheetHandler($this->credentialsFile(), 'sheet-id');
-        $service = new Google_Service_Sheets(new Google_Client());
-        $service->spreadsheets_values = new FailingValues('write failed');
-        $handler->injectService($service);
-
-        $this->assertFalse($handler->WriteRow(['a', 'b']));
+        $this->assertSame('false', $result['writeRow'] ?? null, 'WriteRow() must report the failed write as false even though the logger threw.');
     }
 
     public function testBothCatchBlocksReportThroughTheFailureSafeHelper(): void
@@ -106,13 +65,14 @@ final class LoggingFailureTest extends TestCase
         $this->assertSame(1, substr_count($source, 'Logger::RecordLog('), 'Only the helper may call the logger.');
     }
 
-    private function credentialsFile(): string
+    /** @return array<string, mixed> */
+    private function runScenario(string $root, string $loggerFileInPackage): array
     {
         $key = openssl_pkey_new(['private_key_bits' => 2048]);
         $this->assertNotFalse($key);
         openssl_pkey_export($key, $pem);
-        $file = $this->credentialsDir . '/service-account.json';
-        file_put_contents($file, json_encode([
+        $credentials = $root . '/service-account.json';
+        file_put_contents($credentials, json_encode([
             'type' => 'service_account',
             'project_id' => 'p',
             'private_key_id' => 'key-id',
@@ -121,6 +81,49 @@ final class LoggingFailureTest extends TestCase
             'client_id' => '1',
         ]));
 
-        return $file;
+        $output = (string)shell_exec(sprintf(
+            '%s -d display_errors=0 %s %s %s %s 2>/dev/null',
+            escapeshellarg(PHP_BINARY),
+            escapeshellarg(__DIR__ . '/Support/logging_failure_runner.php'),
+            escapeshellarg($root),
+            escapeshellarg($credentials),
+            escapeshellarg($loggerFileInPackage)
+        ));
+        $decoded = json_decode($output, true);
+        $this->assertIsArray($decoded, 'The scenario runner printed no result: ' . $output);
+
+        /** @var array<string, mixed> $decoded */
+        return $decoded;
+    }
+
+    private function copyDirectory(string $from, string $to): void
+    {
+        mkdir($to, 0775, true);
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($from, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $item) {
+            $relative = substr($item->getPathname(), strlen($from) + 1);
+            if ($item->isDir()) {
+                mkdir($to . '/' . $relative, 0775, true);
+            } else {
+                copy($item->getPathname(), $to . '/' . $relative);
+            }
+        }
+    }
+
+    /** Removes the temporary tree, restoring write permission on every directory first. */
+    private function removeTree(string $path): void
+    {
+        if (!is_dir($path)) {
+            return;
+        }
+        chmod($path, 0775);
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $item) {
+            if ($item->isDir() && !$item->isLink()) {
+                chmod($item->getPathname(), 0775);
+                rmdir($item->getPathname());
+            } else {
+                unlink($item->getPathname());
+            }
+        }
+        rmdir($path);
     }
 }
