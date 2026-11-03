@@ -37,7 +37,7 @@
     }
   ],
   "require": {
-    "google/apiclient": "^2.15",
+    "google/apiclient": "^2.19",
     "maatify/logger": "^5.0 || ^7.0"
   },
   "require-dev": {
@@ -56,5 +56,22 @@
   "scripts": {
     "test": "phpunit",
     "test:logger-matrix": "bash scripts/verify-logger-matrix.sh"
+  },
+  "config": {
+    "sort-packages": true,
+    "policy": {
+      "advisories": {
+        "block": true,
+        "audit": "fail"
+      },
+      "malware": {
+        "block": true,
+        "block-scope": "all",
+        "audit": "fail"
+      },
+      "abandoned": {
+        "audit": "fail"
+      }
+    }
   }
 }
