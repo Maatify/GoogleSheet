@@ -47,7 +47,12 @@ abstract class SheetHandler
             $this->client->setAccessType('offline');
             $this->service = new Google_Service_Sheets($this->client);
         } catch (\Google\Exception $e) {
-            Logger::RecordLog(message: $e, logFile: 'google_sheet_err');
+            // Class, code and line only: the exception message and trace can carry credential paths, sheet ids or tokens.
+            Logger::RecordLog(message: [
+                'exception' => get_class($e),
+                'code' => $e->getCode(),
+                'line' => $e->getLine(),
+            ], logFile: 'google_sheet_err');
         }
     }
 
@@ -75,7 +80,12 @@ abstract class SheetHandler
             $this->service->spreadsheets_values->append($this->spread_sheet_Id, $range, $valueRange, $options);
             return true;
         } catch (Exception $exception) {
-            Logger::RecordLog(message: $exception, logFile: 'g_sheet');
+            // Class, code and line only: the exception message and trace can carry credential paths, sheet ids or tokens.
+            Logger::RecordLog(message: [
+                'exception' => get_class($exception),
+                'code' => $exception->getCode(),
+                'line' => $exception->getLine(),
+            ], logFile: 'g_sheet');
             return false;
         }
         /*
