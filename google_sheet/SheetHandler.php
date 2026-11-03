@@ -24,6 +24,7 @@ use Google_Client;
 use Google_Service_Sheets;
 use Google_Service_Sheets_ValueRange;
 use Maatify\Logger\Logger;
+use Throwable;
 
 abstract class SheetHandler
 {
@@ -47,12 +48,25 @@ abstract class SheetHandler
             $this->client->setAccessType('offline');
             $this->service = new Google_Service_Sheets($this->client);
         } catch (\Google\Exception $e) {
-            // Class, code and line only: the exception message and trace can carry credential paths, sheet ids or tokens.
+            self::reportFailure($e, 'google_sheet_err');
+        }
+    }
+
+    /**
+     * Logs the exception class, code and line only (the message and trace can carry credential
+     * paths, sheet ids or tokens). A failure of the logger itself must not replace the outcome of
+     * the operation that failed, so it is contained here.
+     */
+    private static function reportFailure(Throwable $exception, string $logFile): void
+    {
+        try {
             Logger::RecordLog(message: [
-                'exception' => get_class($e),
-                'code' => $e->getCode(),
-                'line' => $e->getLine(),
-            ], logFile: 'google_sheet_err');
+                'exception' => get_class($exception),
+                'code' => $exception->getCode(),
+                'line' => $exception->getLine(),
+            ], logFile: $logFile);
+        } catch (Throwable) {
+            // Intentionally ignored.
         }
     }
 
@@ -80,12 +94,7 @@ abstract class SheetHandler
             $this->service->spreadsheets_values->append($this->spread_sheet_Id, $range, $valueRange, $options);
             return true;
         } catch (Exception $exception) {
-            // Class, code and line only: the exception message and trace can carry credential paths, sheet ids or tokens.
-            Logger::RecordLog(message: [
-                'exception' => get_class($exception),
-                'code' => $exception->getCode(),
-                'line' => $exception->getLine(),
-            ], logFile: 'g_sheet');
+            self::reportFailure($exception, 'g_sheet');
             return false;
         }
         /*
