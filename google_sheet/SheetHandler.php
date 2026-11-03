@@ -47,7 +47,7 @@ abstract class SheetHandler
             $this->client->setAccessType('offline');
             $this->service = new Google_Service_Sheets($this->client);
         } catch (\Google\Exception $e) {
-            Logger::RecordLog($e, 'google_sheet_err');
+            Logger::RecordLog(message: $e, logFile: 'google_sheet_err');
         }
     }
 
@@ -75,7 +75,7 @@ abstract class SheetHandler
             $this->service->spreadsheets_values->append($this->spread_sheet_Id, $range, $valueRange, $options);
             return true;
         } catch (Exception $exception) {
-            Logger::RecordLog($exception, 'g_sheet');
+            Logger::RecordLog(message: $exception, logFile: 'g_sheet');
             return false;
         }
         /*
