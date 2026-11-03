@@ -1,0 +1,7 @@
+# Keep development and CI files out of the Composer dist archive (git archive honors export-ignore).
+# The runtime sources, composer.json and README.md stay in it.
+/.github      export-ignore
+/tests        export-ignore
+/scripts      export-ignore
+/phpunit.xml  export-ignore
+/.gitignore   export-ignore
